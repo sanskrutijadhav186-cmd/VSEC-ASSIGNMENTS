@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Student Record</title>
+
+    <style>
+
+        body{
+            font-family: Arial;
+            background-color: #eef7ff;
+        }
+
+        .container{
+            width: 500px;
+            margin: 30px auto;
+        }
+
+        button{
+            padding: 5px 10px;
+            margin-bottom: 20px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Student Record</h1>
+
+<label>Name :</label>
+<input type="text" id="name">
+
+<br><br>
+
+<label>Physics :</label>
+<input type="number" id="phy">
+
+<br><br>
+
+<label>Chemistry :</label>
+<input type="number" id="chem">
+
+<br><br>
+
+<label>Maths :</label>
+<input type="number" id="math">
+
+<br><br>
+
+<button onclick="addStudent()">Add Student</button>
+
+<table border="1">
+
+<tr>
+<th>Name</th>
+<th>Physics</th>
+<th>Chemistry</th>
+<th>Maths</th>
+<th>Total</th>
+<th>Percentage</th>
+</tr>
+
+<tbody id="record">
+</tbody>
+
+</table>
+
+<br>
+
+<h2 id="topper">Topper :</h2>
+
+</div>
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
