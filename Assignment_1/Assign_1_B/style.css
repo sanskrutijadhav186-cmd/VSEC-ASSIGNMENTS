@@ -1,0 +1,75 @@
+body{
+    background-color: #f2f2f2;
+    text-align: center;
+    font-family: Arial;
+}
+
+#click{
+    display: none;
+}
+
+.boxarea{
+    width: 240px;
+    height: 240px;
+    margin: 200px auto;
+    position: relative;
+}
+
+.name{
+    position: absolute;
+    top: 100px;
+    left: 70px;
+    font-size: 25px;
+    font-weight: bold;
+    z-index: 1;
+}
+
+.left{
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+    transition: 1s;
+}
+
+.right{
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 2;
+    transition: 1s;
+}
+
+.box{
+    width: 120px;
+    height: 120px;
+    transition: 1s;
+}
+
+.blue{
+    background-color: blue;
+}
+
+.yellow{
+    background-color: yellow;
+}
+
+.red{
+    background-color: red;
+}
+
+.green{
+    background-color: green;
+}
+
+#click:checked + label .left{
+    transform: translateX(-180px);
+}
+
+#click:checked + label .right{
+    transform: translateX(180px);
+}
+
+#click:checked + label .box{
+    transform: rotate(180deg);
+}

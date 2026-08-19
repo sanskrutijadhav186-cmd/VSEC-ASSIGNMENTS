@@ -1,6 +1,5 @@
 body{
-    font-family: Arial;
-    margin: 0;
+    
     background-color: #f2f2f2;
     text-align: center;
 }
@@ -11,7 +10,7 @@ body{
     padding: 15px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    
 }
 
 .menu a{
@@ -31,7 +30,7 @@ body{
     margin: 100px auto;
     background-color: white;
     padding: 20px;
-    border-radius: 10px;
+    
 }
 
 input{
@@ -42,28 +41,26 @@ input{
 button{
     background-color: darkblue;
     color: white;
-    border: none;
     padding: 10px 20px;
 }
 
 .places{
     display: flex;
     justify-content: center;
-    gap: 20px;
-    margin-top: 20px;
+    
 }
 
 .place{
     width: 250px;
     background-color: white;
     padding: 10px;
-    border-radius: 10px;
+    
 }
 
 .place img{
     width: 100%;
     height: 150px;
-    border-radius: 10px;
+    
 }
 
 h1{
