@@ -1,75 +1,68 @@
-body{
-    background-color: #f2f2f2;
+body {
+    background: #f2f2f2;
     text-align: center;
     font-family: Arial;
 }
 
-#click{
-    display: none;
-}
-
-.boxarea{
+.boxarea {
     width: 240px;
     height: 240px;
     margin: 200px auto;
     position: relative;
 }
 
-.name{
+.name {
     position: absolute;
     top: 100px;
     left: 70px;
     font-size: 25px;
     font-weight: bold;
-    z-index: 1;
 }
 
-.left{
+.left {
     position: absolute;
     left: 0;
     top: 0;
-    z-index: 2;
     transition: 1s;
 }
 
-.right{
+.right {
     position: absolute;
     right: 0;
     top: 0;
-    z-index: 2;
     transition: 1s;
 }
 
-.box{
+.box {
     width: 120px;
     height: 120px;
     transition: 1s;
 }
 
-.blue{
-    background-color: blue;
+.blue {
+    background: blue;
 }
 
-.yellow{
-    background-color: yellow;
+.yellow {
+    background: yellow;
 }
 
-.red{
-    background-color: red;
+.red {
+    background: red;
 }
 
-.green{
-    background-color: green;
+.green {
+    background: green;
 }
 
-#click:checked + label .left{
+.boxarea:hover .left {
     transform: translateX(-180px);
 }
 
-#click:checked + label .right{
+.boxarea:hover .right {
     transform: translateX(180px);
 }
 
-#click:checked + label .box{
-    transform: rotate(180deg);
+.boxarea:hover .box {
+    transform: rotate(90deg);
 }
