@@ -5,10 +5,9 @@ import "./App.css";
 const API = "http://localhost:5000";
 
 function App() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(!!localStorage.getItem("token"));
-
-  const [name, setName] = useState("");
+  const [login, setLogin] = useState(true);
+  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [name, setName] = useState(localStorage.getItem("name") || "");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -19,50 +18,48 @@ function App() {
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [search, setSearch] = useState("");
-  const [budget, setBudget] = useState(5000);
-  const [newBudget, setNewBudget] = useState("5000");
+  const [editId, setEditId] = useState(null);
 
-  async function handleSubmit() {
-    if (!email.trim() || !password.trim()) {
-      setMessage("Please enter email and password");
-      return;
-    }
-
-    if (!isLogin && !name.trim()) {
-      setMessage("Please enter your name");
-      return;
-    }
-
+  // Login or register
+  async function handleAuth() {
     try {
-      const url = isLogin ? "/login" : "/register";
-
-      const response = await fetch(API + url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
-      });
+      const response = await fetch(
+        API + (login ? "/login" : "/register"),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password })
+        }
+      );
 
       const data = await response.json();
-      setMessage(data.message);
 
-      if (isLogin && data.token) {
+      if (!response.ok) {
+        setMessage(data.message);
+        return;
+      }
+
+      if (login) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("name", data.name);
-        setLoggedIn(true);
+        setToken(data.token);
+        setName(data.name);
+      } else {
+        setMessage("Registration successful. Please login.");
+        setLogin(true);
       }
     } catch (err) {
       setMessage("Cannot connect to backend");
     }
   }
 
-  async function getExpenses() {
+  // Load expenses
+  async function loadExpenses() {
     try {
       const response = await fetch(
         API + "/expenses?search=" + encodeURIComponent(search),
         {
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("token")
-          }
+          headers: { Authorization: "Bearer " + token }
         }
       );
 
@@ -71,150 +68,122 @@ function App() {
       if (response.ok) {
         setExpenses(data);
       } else {
-        setMessage(data.message || "Error fetching expenses");
+        setMessage(data.message);
       }
     } catch (err) {
-      setMessage("Cannot connect to backend");
+      setMessage("Could not load expenses");
     }
   }
 
-  async function addExpense() {
+  useEffect(() => {
+    if (token) loadExpenses();
+  }, [token, search]);
+
+  // Clear form
+  function clearForm() {
+    setAmount("");
+    setCategory("Food");
+    setDate("");
+    setDescription("");
+    setEditId(null);
+  }
+
+  // Add or update expense
+  async function saveExpense() {
     if (!amount || Number(amount) <= 0 || !date || !description.trim()) {
-      alert("Please enter all expense details");
+      setMessage("Please fill all expense fields correctly");
       return;
     }
 
     try {
-      const response = await fetch(API + "/expenses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token")
-        },
-        body: JSON.stringify({
-          amount: Number(amount),
-          category,
-          date,
-          description
-        })
-      });
+      const response = await fetch(
+        API + (editId ? "/expenses/" + editId : "/expenses"),
+        {
+          method: editId ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token
+          },
+          body: JSON.stringify({
+            amount: Number(amount),
+            category,
+            date,
+            description: description.trim()
+          })
+        }
+      );
+
+      const data = await response.json();
 
       if (response.ok) {
-        setAmount("");
-        setDate("");
-        setDescription("");
-        getExpenses();
+        setMessage(editId ? "Expense updated" : "Expense added");
+        clearForm();
+        loadExpenses();
       } else {
-        alert("Could not add expense");
+        setMessage(data.message);
       }
     } catch (err) {
-      alert("Cannot connect to backend");
+      setMessage("Could not save expense");
     }
   }
 
+  // Edit expense
+  function editExpense(expense) {
+    setEditId(expense._id);
+    setAmount(String(expense.amount));
+    setCategory(expense.category);
+    setDate(expense.date);
+    setDescription(expense.description);
+  }
+
+  // Delete expense
   async function deleteExpense(id) {
+    if (!window.confirm("Delete this expense?")) return;
+
     try {
       const response = await fetch(API + "/expenses/" + id, {
         method: "DELETE",
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token")
-        }
+        headers: { Authorization: "Bearer " + token }
       });
 
       if (response.ok) {
-        getExpenses();
+        setMessage("Expense deleted");
+
+        if (editId === id) clearForm();
+
+        loadExpenses();
+      } else {
+        setMessage("Could not delete expense");
       }
     } catch (err) {
-      alert("Cannot connect to backend");
+      setMessage("Could not connect to backend");
     }
   }
 
-  async function getBudget() {
-    try {
-      const response = await fetch(API + "/budget", {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("token")
-        }
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setBudget(data.budget);
-        setNewBudget(String(data.budget));
-      }
-    } catch (err) {
-      setMessage("Cannot fetch budget");
-    }
-  }
-
-  async function saveBudget() {
-    if (newBudget === "" || Number(newBudget) < 0) {
-      alert("Enter a valid budget");
-      return;
-    }
-
-    try {
-      const response = await fetch(API + "/budget", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token")
-        },
-        body: JSON.stringify({ budget: Number(newBudget) })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setBudget(data.budget);
-        alert("Budget saved successfully");
-      }
-    } catch (err) {
-      alert("Cannot connect to backend");
-    }
-  }
-
+  // Logout
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("name");
-    setLoggedIn(false);
+    setToken(null);
+    setName("");
     setExpenses([]);
+    clearForm();
     setMessage("");
-    setPassword("");
   }
 
-  useEffect(() => {
-    if (loggedIn) {
-      getExpenses();
-      getBudget();
-    }
-  }, [loggedIn]);
-
-  useEffect(() => {
-    if (loggedIn) {
-      getExpenses();
-    }
-  }, [search]);
-
-  const currentMonth = new Date().toISOString().slice(0, 7);
-
-  const monthlyTotal = expenses
-    .filter((expense) => expense.date.startsWith(currentMonth))
-    .reduce((total, expense) => total + expense.amount, 0);
-
-  if (!loggedIn) {
+  // Login page
+  if (!token) {
     return (
       <div className="container">
         <h1>SpendSmart</h1>
-        <p>Track your expenses. Manage your money.</p>
+        <p>Manage your student expenses easily.</p>
 
         <div className="form">
-          <h2>{isLogin ? "Login" : "Create Account"}</h2>
+          <h2>{login ? "Login" : "Register"}</h2>
 
-          {!isLogin && (
+          {!login && (
             <input
-              placeholder="Enter your name"
+              placeholder="Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -222,85 +191,56 @@ function App() {
 
           <input
             type="email"
-            placeholder="Enter your email"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
 
           <input
             type="password"
-            placeholder="Enter your password"
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button onClick={handleSubmit}>
-            {isLogin ? "Login" : "Register"}
+          <button onClick={handleAuth}>
+            {login ? "Login" : "Register"}
           </button>
 
           <p>{message}</p>
 
-          <p>
-            {isLogin ? "Don't have an account?" : "Already have an account?"}
-            <button
-              className="link-button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setMessage("");
-              }}
-            >
-              {isLogin ? "Register" : "Login"}
-            </button>
-          </p>
+          <button
+            className="link-button"
+            onClick={() => {
+              setLogin(!login);
+              setMessage("");
+            }}
+          >
+            {login ? "Create an account" : "Back to Login"}
+          </button>
         </div>
       </div>
     );
   }
+
+  // Expense dashboard
+  const total = expenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  );
 
   return (
     <div className="main-container">
       <div className="header">
         <div>
           <h1>SpendSmart</h1>
-          <p>Welcome, {localStorage.getItem("name")}!</p>
+          <p>Welcome, {name}!</p>
         </div>
-
         <button onClick={logout}>Logout</button>
       </div>
 
-      <div className="budget-section">
-        <h2>Monthly Budget</h2>
-
-        <div className="budget-details">
-          <div>
-            <p>Total Budget</p>
-            <h3>₹{budget}</h3>
-          </div>
-
-          <div>
-            <p>Total Spent</p>
-            <h3>₹{monthlyTotal}</h3>
-          </div>
-
-          <div>
-            <p>Remaining</p>
-            <h3>₹{budget - monthlyTotal}</h3>
-          </div>
-        </div>
-
-        <div className="budget-form">
-          <input
-            type="number"
-            placeholder="Enter monthly budget"
-            value={newBudget}
-            onChange={(e) => setNewBudget(e.target.value)}
-          />
-          <button onClick={saveBudget}>Save Budget</button>
-        </div>
-      </div>
-
       <div className="expense-section">
-        <h2>Add New Expense</h2>
+        <h2>{editId ? "Edit Expense" : "Add Expense"}</h2>
 
         <div className="expense-form">
           <input
@@ -333,12 +273,20 @@ function App() {
             onChange={(e) => setDescription(e.target.value)}
           />
 
-          <button onClick={addExpense}>Add Expense</button>
+          <button onClick={saveExpense}>
+            {editId ? "Update Expense" : "Add Expense"}
+          </button>
+
+          {editId && (
+            <button onClick={clearForm}>Cancel Edit</button>
+          )}
         </div>
       </div>
 
       <div className="expense-section">
-        <h2>My Expenses ({expenses.length})</h2>
+        <h2>My Expenses</h2>
+
+        <h3>Total: ₹{total}</h3>
 
         <input
           className="search-input"
@@ -354,10 +302,13 @@ function App() {
             <div>
               <h3>{expense.description}</h3>
               <p>{expense.category} • {expense.date}</p>
+              <h3>₹{expense.amount}</h3>
             </div>
 
             <div className="expense-actions">
-              <h3>₹{expense.amount}</h3>
+              <button onClick={() => editExpense(expense)}>
+                Edit
+              </button>
               <button onClick={() => deleteExpense(expense._id)}>
                 Delete
               </button>
