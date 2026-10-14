@@ -5,13 +5,19 @@ import "./App.css";
 const API = "http://localhost:5000";
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const [name, setName] = useState(localStorage.getItem("name") || "");
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user") || "null")
+  );
+
+  const [page, setPage] = useState(
+    localStorage.getItem("user") ? "add" : "login"
+  );
+
+  const [isRegister, setIsRegister] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-
-  const [page, setPage] = useState("add");
 
   const [expenses, setExpenses] = useState([]);
   const [amount, setAmount] = useState("");
@@ -19,234 +25,246 @@ function App() {
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [search, setSearch] = useState("");
-  const [editId, setEditId] = useState(null);
+  const [editId, setEditId] = useState("");
 
-  // Login
-  async function handleLogin() {
+  // Login or Register
+  async function login() {
     try {
-      const response = await fetch(API + "/login", {
+      const url = isRegister ? "/register" : "/login";
+
+      const body = isRegister
+        ? { name, email, password }
+        : { email, password };
+
+      const res = await fetch(API + url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(body)
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (!response.ok) {
+      if (!res.ok) {
         setMessage(data.message);
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("name", data.name);
-      setToken(data.token);
-      setName(data.name);
-      setPage("add");
-      setMessage("");
-    } catch (err) {
+      if (isRegister) {
+        setIsRegister(false);
+        setPassword("");
+        setMessage("Registered! Please login.");
+      } else {
+        localStorage.setItem("user", JSON.stringify(data));
+        setUser(data);
+        setPage("add");
+        setMessage("");
+      }
+    } catch {
       setMessage("Cannot connect to backend");
     }
   }
 
-  // Load expenses
+  // READ - Load expenses
   async function loadExpenses() {
     try {
-      const response = await fetch(
-        API + "/expenses?search=" + encodeURIComponent(search),
-        {
-          headers: { Authorization: "Bearer " + token }
-        }
+      const res = await fetch(
+        API + "/expenses/" + user.id +
+        "?search=" + encodeURIComponent(search)
       );
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok) {
+      if (res.ok) {
         setExpenses(data);
       } else {
         setMessage(data.message);
       }
-    } catch (err) {
+    } catch {
       setMessage("Could not load expenses");
     }
   }
 
   useEffect(() => {
-    if (token) {
+    if (user && page === "expenses") {
       loadExpenses();
     }
-  }, [token, search]);
+  }, [user, page, search]);
 
-  // Clear expense form
+  // Clear form
   function clearForm() {
     setAmount("");
     setCategory("Food");
     setDate("");
     setDescription("");
-    setEditId(null);
+    setEditId("");
   }
 
-  // Add or update expense
+  // CREATE or UPDATE
   async function saveExpense() {
     if (!amount || Number(amount) <= 0 || !date || !description.trim()) {
-      setMessage("Please fill all expense fields correctly");
+      setMessage("Please fill all fields correctly");
       return;
     }
 
+    const expense = {
+      userId: user.id,
+      amount: Number(amount),
+      category,
+      date,
+      description: description.trim()
+    };
+
     try {
-      const response = await fetch(
+      const res = await fetch(
         API + (editId ? "/expenses/" + editId : "/expenses"),
         {
           method: editId ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + token
-          },
-          body: JSON.stringify({
-            amount: Number(amount),
-            category,
-            date,
-            description: description.trim()
-          })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(expense)
         }
       );
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok) {
+      if (res.ok) {
         setMessage(editId ? "Expense updated" : "Expense added");
         clearForm();
-
-        await loadExpenses();
         setPage("expenses");
       } else {
-        setMessage(data.message);
+        setMessage(data.message || "Could not save expense");
       }
-    } catch (err) {
-      setMessage("Could not save expense");
+    } catch {
+      setMessage("Cannot connect to backend");
     }
   }
 
   // Edit expense
   function editExpense(expense) {
-    setEditId(expense._id);
     setAmount(String(expense.amount));
     setCategory(expense.category);
     setDate(expense.date);
     setDescription(expense.description);
+    setEditId(expense._id);
     setMessage("");
     setPage("add");
   }
 
-  // Delete expense
+  // DELETE - Remove expense
   async function deleteExpense(id) {
-    if (!window.confirm("Delete this expense?")) {
-      return;
-    }
+    if (!window.confirm("Delete this expense?")) return;
 
     try {
-      const response = await fetch(API + "/expenses/" + id, {
-        method: "DELETE",
-        headers: { Authorization: "Bearer " + token }
-      });
+      const res = await fetch(
+        API + "/expenses/" + id + "?userId=" + user.id,
+        { method: "DELETE" }
+      );
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok) {
+      if (res.ok) {
         setMessage("Expense deleted");
-
-        if (editId === id) {
-          clearForm();
-        }
-
-        await loadExpenses();
+        loadExpenses();
       } else {
         setMessage(data.message);
       }
-    } catch (err) {
-      setMessage("Could not connect to backend");
+    } catch {
+      setMessage("Could not delete expense");
     }
   }
 
   // Logout
   function logout() {
-    localStorage.removeItem("token");
-    localStorage.removeItem("name");
-
-    setToken(null);
-    setName("");
+    localStorage.removeItem("user");
+    setUser(null);
     setExpenses([]);
-    setSearch("");
     clearForm();
+    setSearch("");
+    setPage("login");
     setMessage("");
-    setPage("add");
   }
 
-  // Login page
-  if (!token) {
+  // PAGE 1 - Login
+  if (!user) {
     return (
-      <div className="container">
-        <h1>SpendSmart</h1>
-        <p>Manage your student expenses easily.</p>
+      <div className="login-page">
+        <div className="login-card">
+          <h1>SpendSmart</h1>
+          <p>Track your expenses. Manage your money.</p>
 
-        <div className="form">
-          <h2>Login</h2>
+          <h2>{isRegister ? "Register" : "Login"}</h2>
+
+          {isRegister && (
+            <input
+              placeholder="Enter your name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+            />
+          )}
 
           <input
             type="email"
-            placeholder="Email"
+            placeholder="Enter your email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={e => setEmail(e.target.value)}
           />
 
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Enter your password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={e => setPassword(e.target.value)}
           />
 
-          <button onClick={handleLogin}>Login</button>
+          <button onClick={login}>
+            {isRegister ? "Register" : "Login"}
+          </button>
 
-          <p>{message}</p>
+          <p className="message">{message}</p>
+
+          <p className="register-link">
+            {isRegister
+              ? "Already have an account? "
+              : "Don't have an account? "}
+
+            <span onClick={() => {
+              setIsRegister(!isRegister);
+              setMessage("");
+            }}>
+              {isRegister ? "Login" : "Register"}
+            </span>
+          </p>
         </div>
       </div>
     );
   }
 
-  // Total of currently displayed expenses
-  const total = expenses.reduce(
-    (sum, expense) => sum + expense.amount,
-    0
-  );
+  // PAGE 2 - Add or Edit Expense
+  if (page === "add") {
+    return (
+      <div className="dashboard">
+        <header>
+          <div>
+            <h1>SpendSmart</h1>
+            <p>Welcome, {user.name}!</p>
+          </div>
+          <button className="small-button" onClick={logout}>
+            Logout
+          </button>
+        </header>
 
-  return (
-    <div className="main-container">
-      <div className="header">
-        <div>
-          <h1>SpendSmart</h1>
-          <p>Welcome, {name}!</p>
-        </div>
+        <nav>
+          <button onClick={() => setPage("add")}>
+            Add Expense
+          </button>
+          <button onClick={() => {
+            setMessage("");
+            setPage("expenses");
+          }}>
+            My Expenses
+          </button>
+        </nav>
 
-        <button onClick={logout}>Logout</button>
-      </div>
-
-      <div className="expense-section">
-        <button onClick={() => setPage("add")}>
-          Add Expense
-        </button>
-
-        <button onClick={() => {
-          setMessage("");
-          loadExpenses();
-          setPage("expenses");
-        }}>
-          My Expenses
-        </button>
-      </div>
-
-      {/* Add or Edit Expense */}
-      {page === "add" && (
-        <div className="expense-section">
+        <section className="expense-section">
           <h2>{editId ? "Edit Expense" : "Add Expense"}</h2>
 
           <div className="expense-form">
@@ -254,12 +272,12 @@ function App() {
               type="number"
               placeholder="Amount (₹)"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={e => setAmount(e.target.value)}
             />
 
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={e => setCategory(e.target.value)}
             >
               <option>Food</option>
               <option>Travel</option>
@@ -271,13 +289,13 @@ function App() {
             <input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={e => setDate(e.target.value)}
             />
 
             <input
               placeholder="Description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={e => setDescription(e.target.value)}
             />
 
             <button onClick={saveExpense}>
@@ -285,55 +303,85 @@ function App() {
             </button>
 
             {editId && (
-              <button onClick={clearForm}>Cancel Edit</button>
+              <button onClick={() => {
+                clearForm();
+                setMessage("");
+              }}>
+                Cancel Edit
+              </button>
             )}
           </div>
 
-          <p>{message}</p>
+          <p className="message">{message}</p>
+        </section>
+      </div>
+    );
+  }
+
+  // PAGE 3 - My Expenses
+  const total = expenses.reduce(
+    (sum, expense) => sum + expense.amount, 0
+  );
+
+  return (
+    <div className="dashboard">
+      <header>
+        <div>
+          <h1>SpendSmart</h1>
+          <p>Welcome, {user.name}!</p>
         </div>
-      )}
+        <button className="small-button" onClick={logout}>
+          Logout
+        </button>
+      </header>
 
-      {/* My Expenses */}
-      {page === "expenses" && (
-        <div className="expense-section">
-          <h2>My Expenses</h2>
+      <nav>
+        <button onClick={() => {
+          clearForm();
+          setMessage("");
+          setPage("add");
+        }}>
+          Add Expense
+        </button>
+        <button onClick={() => setPage("expenses")}>
+          My Expenses
+        </button>
+      </nav>
 
-          <h3>Total: ₹{total}</h3>
+      <section className="expense-section">
+        <h2>My Expenses</h2>
+        <h3>Total: ₹{total}</h3>
 
-          <input
-            className="search-input"
-            placeholder="Search by description"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <input
+          className="search-input"
+          placeholder="Search by description"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
 
-          <p>{message}</p>
+        <p className="message">{message}</p>
 
-          {expenses.length === 0 && (
-            <p>No expenses found.</p>
-          )}
+        {expenses.length === 0 && <p>No expenses found.</p>}
 
-          {expenses.map((expense) => (
-            <div className="expense-item" key={expense._id}>
-              <div>
-                <h3>{expense.description}</h3>
-                <p>{expense.category} • {expense.date}</p>
-                <h3>₹{expense.amount}</h3>
-              </div>
-
-              <div className="expense-actions">
-                <button onClick={() => editExpense(expense)}>
-                  Edit
-                </button>
-
-                <button onClick={() => deleteExpense(expense._id)}>
-                  Delete
-                </button>
-              </div>
+        {expenses.map(expense => (
+          <div className="expense-item" key={expense._id}>
+            <div>
+              <h3>{expense.description}</h3>
+              <p>{expense.category} • {expense.date}</p>
+              <h3>₹{expense.amount}</h3>
             </div>
-          ))}
-        </div>
-      )}
+
+            <div className="expense-actions">
+              <button onClick={() => editExpense(expense)}>
+                Edit
+              </button>
+              <button onClick={() => deleteExpense(expense._id)}>
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </section>
     </div>
   );
 }

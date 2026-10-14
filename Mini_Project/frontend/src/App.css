@@ -1,142 +1,145 @@
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  background-color: #f1f5f9;
   font-family: Arial, sans-serif;
-  font-size: 18px;
-}
-
-.container {
-  width: 450px;
-  max-width: calc(100% - 50px);
-  margin: 70px auto;
-  padding: 30px;
-  text-align: center;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 0 15px lightgray;
-  box-sizing: border-box;
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-input,
-select {
-  padding: 14px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-}
-
-button {
-  padding: 14px 18px;
-  font-size: 16px;
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #1d4ed8;
+  background: #f5f8fc;
+  color: #111827;
 }
 
 h1 {
   color: #2563eb;
+  margin-bottom: 5px;
+}
+
+button {
+  background: #2864ed;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 12px 16px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #174dcc;
+}
+
+input, select {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font: inherit;
+  min-width: 0;
+}
+
+input:focus, select:focus {
+  outline: 1px solid #2563eb;
+}
+
+/* PAGE 1 - LOGIN */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 430px;
+  min-height: 600px;
+  padding: 45px 30px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 20px #00000015;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 15px;
+}
+
+.login-card h1,
+.login-card h2,
+.login-card > p {
+  text-align: center;
+}
+
+.login-card h1 {
   font-size: 36px;
 }
 
-h2 {
-  font-size: 25px;
+.login-card input,
+.login-card button {
+  width: 100%;
+  padding: 15px;
 }
 
-/* Main page */
-
-.main-container {
-  max-width: 950px;
-  margin: 35px auto;
-  padding: 30px;
-  background: #f8fafc;
-  border-radius: 12px;
-  box-sizing: border-box;
+.register-link {
+  margin-top: 45px;
 }
 
-.header {
+.register-link span {
+  color: #2563eb;
+  cursor: pointer;
+}
+
+/* DASHBOARD */
+
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 25px;
+}
+
+header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 25px;
+  margin-bottom: 30px;
 }
 
-.header h1 {
-  margin-bottom: 5px;
+header h1 {
+  margin-top: 0;
 }
 
-.header p {
-  margin-top: 5px;
+.small-button {
+  width: auto;
 }
 
-.budget-section,
+nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
 .expense-section {
   background: white;
-  padding: 25px;
-  margin-bottom: 25px;
-  border-radius: 10px;
-  border: 1px solid #e2e8f0;
-}
-
-.budget-details {
-  display: flex;
-  gap: 15px;
-  margin: 20px 0;
-}
-
-.budget-details div {
-  flex: 1;
-  padding: 15px;
-  background: #eff6ff;
+  border: 1px solid #e0e7f0;
   border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
 }
 
-.budget-details p {
-  color: #475569;
-  margin: 5px 0;
-}
-
-.budget-details h3 {
-  color: #2563eb;
-  margin-bottom: 5px;
-}
-
-.budget-form,
 .expense-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 15px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
 }
 
-.budget-form input {
-  flex: 1;
-  min-width: 180px;
-}
-
-.expense-form input,
-.expense-form select {
-  flex: 1;
-  min-width: 180px;
+.expense-form button {
+  width: fit-content;
 }
 
 .search-input {
   width: 100%;
-  margin: 10px 0 20px;
+  margin: 12px 0;
 }
 
 .expense-item {
@@ -145,43 +148,44 @@ h2 {
   align-items: center;
   gap: 15px;
   padding: 15px 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #dce3ed;
 }
 
-.expense-item h3 {
+.expense-item h3,
+.expense-item p {
   margin: 5px 0;
+  overflow-wrap: anywhere;
 }
 
 .expense-item p {
   color: #64748b;
-  margin: 5px 0;
 }
 
 .expense-actions {
   display: flex;
-  align-items: center;
-  gap: 15px;
+  gap: 8px;
 }
 
-.link-button {
-  background: none;
+.expense-actions button {
+  width: auto;
+}
+
+.message {
   color: #2563eb;
-  padding: 5px;
+  overflow-wrap: anywhere;
 }
 
-.link-button:hover {
-  background: none;
-  text-decoration: underline;
-}
-
-@media (max-width: 600px) {
-  .main-container {
-    margin: 10px;
+@media (max-width: 700px) {
+  .dashboard {
     padding: 15px;
   }
 
-  .budget-details {
-    flex-direction: column;
+  .expense-form {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-form button {
+    width: 100%;
   }
 
   .expense-item {
@@ -190,6 +194,10 @@ h2 {
 
   .expense-actions {
     flex-direction: column;
-    align-items: flex-end;
+  }
+
+  .login-card {
+    min-height: 0;
+    padding: 30px 20px;
   }
 }
