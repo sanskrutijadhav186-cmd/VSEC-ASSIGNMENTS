@@ -1,10 +1,10 @@
+
 import { useState, useEffect } from "react";
 import "./App.css";
 
 const API = "http://localhost:5000";
 
 function App() {
-  const [login, setLogin] = useState(true);
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [name, setName] = useState(localStorage.getItem("name") || "");
   const [email, setEmail] = useState("");
@@ -21,17 +21,14 @@ function App() {
   const [search, setSearch] = useState("");
   const [editId, setEditId] = useState(null);
 
-  // Login or register
-  async function handleAuth() {
+  // Login
+  async function handleLogin() {
     try {
-      const response = await fetch(
-        API + (login ? "/login" : "/register"),
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password })
-        }
-      );
+      const response = await fetch(API + "/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
 
       const data = await response.json();
 
@@ -40,17 +37,12 @@ function App() {
         return;
       }
 
-      if (login) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("name", data.name);
-        setToken(data.token);
-        setName(data.name);
-        setPage("add");
-        setMessage("");
-      } else {
-        setMessage("Registration successful. Please login.");
-        setLogin(true);
-      }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("name", data.name);
+      setToken(data.token);
+      setName(data.name);
+      setPage("add");
+      setMessage("");
     } catch (err) {
       setMessage("Cannot connect to backend");
     }
@@ -189,7 +181,7 @@ function App() {
     setPage("add");
   }
 
-  // Page 1: Login or Register
+  // Login page
   if (!token) {
     return (
       <div className="container">
@@ -197,15 +189,7 @@ function App() {
         <p>Manage your student expenses easily.</p>
 
         <div className="form">
-          <h2>{login ? "Login" : "Register"}</h2>
-
-          {!login && (
-            <input
-              placeholder="Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          )}
+          <h2>Login</h2>
 
           <input
             type="email"
@@ -221,21 +205,9 @@ function App() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <button onClick={handleAuth}>
-            {login ? "Login" : "Register"}
-          </button>
+          <button onClick={handleLogin}>Login</button>
 
           <p>{message}</p>
-
-          <button
-            className="link-button"
-            onClick={() => {
-              setLogin(!login);
-              setMessage("");
-            }}
-          >
-            {login ? "Create an account" : "Back to Login"}
-          </button>
         </div>
       </div>
     );
@@ -272,7 +244,7 @@ function App() {
         </button>
       </div>
 
-      {/* Page 2: Add or Edit Expense */}
+      {/* Add or Edit Expense */}
       {page === "add" && (
         <div className="expense-section">
           <h2>{editId ? "Edit Expense" : "Add Expense"}</h2>
@@ -313,9 +285,7 @@ function App() {
             </button>
 
             {editId && (
-              <button onClick={clearForm}>
-                Cancel Edit
-              </button>
+              <button onClick={clearForm}>Cancel Edit</button>
             )}
           </div>
 
@@ -323,7 +293,7 @@ function App() {
         </div>
       )}
 
-      {/* Page 3: Display, Edit and Delete Expenses */}
+      {/* My Expenses */}
       {page === "expenses" && (
         <div className="expense-section">
           <h2>My Expenses</h2>

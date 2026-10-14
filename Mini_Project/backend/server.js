@@ -32,34 +32,6 @@ const Expense = mongoose.model("Expense", new mongoose.Schema({
   description: String
 }));
 
-// Register
-app.post("/register", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Fill all fields" });
-    }
-
-    const exists = await User.findOne({ email });
-
-    if (exists) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
-
-    const user = new User({
-      name,
-      email,
-      password: await bcrypt.hash(password, 10)
-    });
-
-    await user.save();
-    res.json({ message: "Registration successful" });
-  } catch (err) {
-    res.status(500).json({ message: "Registration failed" });
-  }
-});
-
 // Login
 app.post("/login", async (req, res) => {
   try {
